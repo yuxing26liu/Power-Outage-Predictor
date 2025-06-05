@@ -216,20 +216,17 @@ This histogram shows the distribution of outage durations (in minutes) across al
 
 ## Step 6: Baseline Model
 We begin with a baseline regression model that uses only the two categorical predictors: `CAUSE.CATEGORY` and `CLIMATE.REGION`. We split the cleaned data (`df_clean`) into 80 % for training and 20 % for testing. A `ColumnTransformer` one‐hot encodes both categorical columns, and a `RandomForestRegressor` (with 100 trees) is fit on the encoded training data. After training, we predict on the held‐out test set and compute test‐set RMSE and R². This baseline establishes a performance floor: it shows how well we can predict outage duration using only cause and region information. Any additional features in later steps should improve upon these baseline metrics.
-The baseline model—which used only cause category and climate region—has an RMSE of 7 398 minutes (≈ 123 hours), meaning its outage‐duration predictions are off by about five days on average. This is due to only providing 2 categories. Its R² of 0.108 indicates it explains only 10.8 % of the variance in true outage durations. In other words, **cause and region alone capture very little of the signal, and most of the variability in outage length remains unexplained at this baseline level.** To improve this, we need more information/indicators to reac our target and what we will do in step 7.
+The baseline model—which used only cause category and climate region—has an RMSE of 7 398 minutes (≈ 123 hours), meaning its outage‐duration predictions are off by about five days on average. This is due to only providing 2 categories. Its R² of 0.108 indicates it explains only 10.8 % of the variance in true outage durations. In other words, **cause and region alone capture very little of the signal, and most of the variability in outage length remains unexplained at this baseline level.** To improve this, we need more information/indicators to reach our target which is what we will do in step 7.
 
 
 ## Step 7: Final Model
-Building on the baseline, we now include six predictors—CAUSE.CATEGORY, CLIMATE.REGION, U.S._STATE, POPDEN_URBAN, a log‐transformed residential customers column (res_cust_log), and MONTH (encoded as cyclical month_sin/month_cos), along with day‐of‐week (dow) and weekend flag (is_weekend). We begin by dropping the top 10 % of longest outages to reduce extreme‐value influence. Again, we use an 80/20 train/test split. Our ColumnTransformer one‐hot encodes the three categorical features, standardizes the three numeric features (MONTH, POPDEN_URBAN, res_cust_log), and passes the four engineered features (month_sin, month_cos, dow, is_weekend) through unchanged. Instead of a Random Forest, we fit a HistGradientBoostingRegressor within a Pipeline and perform a grid search over max_iter (200, 400, 600), max_leaf_nodes (15, 31, 63), and learning_rate (0.1, 0.05, 0.01) using 5‐fold cross‐validation on the training set, optimizing for RMSE. Finally, we evaluate the best HGB model on the test set, reporting RMSE and R². Improvement over the baseline indicates that adding state‐level, population-density, customer-count, and temporal features—and using a boosted tree with hyperparameter tuning—provides substantial additional predictive power.
+Building on the baseline and our ideas to improve our model, we will now include six predictors: CAUSE.CATEGORY, CLIMATE.REGION, U.S._STATE, POPDEN_URBAN, a log‐transformed residential customers column (res_cust_log), and MONTH (encoded as cyclical month_sin/month_cos), along with day‐of‐week (dow) and weekend flag (is_weekend). We begin by dropping the top 10 % of longest outages to reduce extreme‐value influence. Again, we use an 80/20 train/test split. Our ColumnTransformer one‐hot encodes the three categorical features, standardizes the three numeric features (MONTH, POPDEN_URBAN, res_cust_log), and passes the four engineered features (month_sin, month_cos, dow, is_weekend) through unchanged. Instead of a Random Forest, we fit a HistGradientBoostingRegressor within a Pipeline and perform a grid search over max_iter (200, 400, 600), max_leaf_nodes (15, 31, 63), and learning_rate (0.1, 0.05, 0.01) using 5‐fold cross‐validation on the training set, optimizing for RMSE. With that we get this: 
 
-Dropped outages > 6877 minutes; new size: (1328, 60)
-Fitting 5 folds for each of 27 candidates, totalling 135 fits
-Best hyperparameters: {'hgb__learning_rate': 0.01, 'hgb__max_iter': 200, 'hgb__max_leaf_nodes': 63}
-Filtered‐Data Model Test RMSE = 1329.56 minutes
-Filtered‐Data Model Test R²  = 0.4004
-/Users/rociosaez/miniforge3/envs/dsc80/lib/python3.12/site-packages/sklearn/metrics/_regression.py:492: FutureWarning:
+>>Filtered‐Data Model Test RMSE = 1329.56 minutes
+>>Filtered‐Data Model Test R²  = 0.4004
 
-'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+Here, we can see improvement over the baseline, indicating that adding state‐level, population-density, customer-count, and temporal features—and using a boosted tree with hyperparameter tuning—provides substantial additional predictive power.
+
 
 ### Final Model Results: Actual vs. Predicted Outage Duration
 
