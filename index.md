@@ -180,3 +180,77 @@ Hypothesis Test: Are summer outages more severe?
 Null Hypothesis (H₀): Outages in summer are not longer than outages in other seasons.
 
 Alternative Hypothesis (H₁): Outages in summer have significantly greater durations than those in other seasons.
+<iframe
+  src="assets/summer_vs_others_boxplot.html"
+  width="800"
+  height="500"
+  frameborder="0"
+></iframe>
+There is no significant evidence that power outages in summer are longer than those in other seasons. The distribution of durations appears similar across seasons based on the boxplot and statistical test.
+
+<iframe
+  src="assets/summer_duration_permutation.html"
+  width="800"
+  height="500"
+  frameborder="0"
+></iframe>
+
+We fail to reject the null hypothesis. There is no statistically significant evidence that outages in summer are more severe (longer in duration) than those in other seasons.
+
+# Step 5: Framing a Prediction Problem
+Identify a prediction problem. Feel free to use one of the example prediction problems stated in the “Example Questions and Prediction Problems” section of your dataset’s description page or pose a hypothesis test of your own. The prediction problem you come up with doesn’t have to be related to the question you were answering in Steps 1-4, but ideally, your entire project has some sort of coherent theme.
+
+Before building any predictive model, we need to turn our descriptive and inferential insights into a concrete supervised‐learning task. Based on our analyses so far—especially the finding in Step 4 that “summer outages tend to be longer,” plus our EDA showing that cause category, climate region, and population density all influence outage length—we will set up a **regression problem**: 
+> We will build a regression model that, given (`CAUSE.CATEGORY`, `CLIMATE.REGION`, `MONTH`, `POPDEN_URBAN`), predicts how many minutes an outage will last.  
+### Distribution of Outage Durations
+
+This histogram shows the distribution of outage durations (in minutes) across all events in the dataset. Most outages are relatively short, but some last for tens of thousands of minutes, indicating extreme severity in certain cases.
+
+<iframe
+  src="assets/outage_duration_hist.html"
+  width="800"
+  height="500"
+  frameborder="0"
+></iframe>
+
+
+## Step 6: Baseline Model
+We begin with a baseline regression model that uses only the two categorical predictors: `CAUSE.CATEGORY` and `CLIMATE.REGION`. We split the cleaned data (`df_clean`) into 80 % for training and 20 % for testing. A `ColumnTransformer` one‐hot encodes both categorical columns, and a `RandomForestRegressor` (with 100 trees) is fit on the encoded training data. After training, we predict on the held‐out test set and compute test‐set RMSE and R². This baseline establishes a performance floor: it shows how well we can predict outage duration using only cause and region information. Any additional features in later steps should improve upon these baseline metrics.
+The baseline model—which used only cause category and climate region—has an RMSE of 7 398 minutes (≈ 123 hours), meaning its outage‐duration predictions are off by about five days on average. This is due to only providing 2 categories. Its R² of 0.108 indicates it explains only 10.8 % of the variance in true outage durations. In other words, **cause and region alone capture very little of the signal, and most of the variability in outage length remains unexplained at this baseline level.** To improve this, we need more information/indicators to reac our target and what we will do in step 7.
+
+
+## Step 7: Final Model
+Building on the baseline, we now include six predictors—CAUSE.CATEGORY, CLIMATE.REGION, U.S._STATE, POPDEN_URBAN, a log‐transformed residential customers column (res_cust_log), and MONTH (encoded as cyclical month_sin/month_cos), along with day‐of‐week (dow) and weekend flag (is_weekend). We begin by dropping the top 10 % of longest outages to reduce extreme‐value influence. Again, we use an 80/20 train/test split. Our ColumnTransformer one‐hot encodes the three categorical features, standardizes the three numeric features (MONTH, POPDEN_URBAN, res_cust_log), and passes the four engineered features (month_sin, month_cos, dow, is_weekend) through unchanged. Instead of a Random Forest, we fit a HistGradientBoostingRegressor within a Pipeline and perform a grid search over max_iter (200, 400, 600), max_leaf_nodes (15, 31, 63), and learning_rate (0.1, 0.05, 0.01) using 5‐fold cross‐validation on the training set, optimizing for RMSE. Finally, we evaluate the best HGB model on the test set, reporting RMSE and R². Improvement over the baseline indicates that adding state‐level, population-density, customer-count, and temporal features—and using a boosted tree with hyperparameter tuning—provides substantial additional predictive power.
+
+Dropped outages > 6877 minutes; new size: (1328, 60)
+Fitting 5 folds for each of 27 candidates, totalling 135 fits
+Best hyperparameters: {'hgb__learning_rate': 0.01, 'hgb__max_iter': 200, 'hgb__max_leaf_nodes': 63}
+Filtered‐Data Model Test RMSE = 1329.56 minutes
+Filtered‐Data Model Test R²  = 0.4004
+/Users/rociosaez/miniforge3/envs/dsc80/lib/python3.12/site-packages/sklearn/metrics/_regression.py:492: FutureWarning:
+
+'squared' is deprecated in version 1.4 and will be removed in 1.6. To calculate the root mean squared error, use the function'root_mean_squared_error'.
+
+### Final Model Results: Actual vs. Predicted Outage Duration
+
+This interactive plot shows predicted vs. actual outage durations on the test set. Each vertical gray line represents the error between the actual value and the model’s prediction.
+
+<iframe
+  src="assets/prediction_vs_actual.html"
+  width="900"
+  height="500"
+  frameborder="0"
+></iframe>
+
+Now our model has improved. We achieved an RMSE of 1329.56 minutes (≈ 22.1 hours) and an R² of 0.4004. The most likely reason our R² is **still** low and RMSE high is that **outage durations are still extremely skewed**. In other words, **the model’s predictions are off by roughly 22 hours on average, and it explains only about 40 % of the variance in outage durations**. 
+
+Our process in improving our model was introducing more hyper parameters, attemtping to get rid of extreme outlier, and engineering new temporal features (month_sin/month_cos, day‐of‐week, weekend flag) and transforming residential customer counts via log scaling. Since our model improved this shows these efforts had a positive impact on the model, however, since we never reached our goal of R^2 > 0.75 which indicates a good model, this indicates that while the HistGradientBoostingRegressor captures some predictive structure, most of the variation in duration remains unaccounted for.
+
+## Step 8: Fairness Analysis
+Before running the permutation test, we clearly define our groups, metric, and hypotheses for fairness. We compare the model’s performance on two subgroups: outages in `CLIMATE.REGION == "South"` (Group X) versus outages in `CLIMATE.REGION == "East North Central"` (Group Y). Because our task is regression, we use **Root Mean Squared Error (RMSE)** as the evaluation metric. 
+
+> **null hypothesis (H₀):** RMSE for South and East North Central are equal—any observed difference arises purely by chance.
+
+> **alternative hypothesis (H₁):** RMSE for South is greater than RMSE_ENC, meaning the model performs worse for the South.
+
+To test this, we compute the observed difference Δ_obs = RMSE_South − RMSE_ENC on the held‐out test set. We then randomly permute the “region” labels among the test examples 1,000 times, recomputing Δ_perm = RMSE_perm_South − RMSE_perm_ENC for each shuffle to build a null distribution. The one‐sided p‐value is the fraction of Δ_perm ≥ Δ_obs. If p < 0.05, we reject H₀ and conclude a significant fairness gap; otherwise, we fail to reject H₀, indicating no evidence that the model’s error is systematically higher for South.  
