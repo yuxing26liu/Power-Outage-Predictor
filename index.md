@@ -119,17 +119,17 @@ Do outages in summer or winter tend to be longer or larger?
 This box plot breaks down outage duration by month to reveal potential seasonal effects. August, September, and October show slightly higher median durations and more high-end outliers, which may correspond to peak storm or hurricane seasons. These findings suggest that certain months may require increased readiness and response resources.
 
 ### Average Outage Duration by Climate Region and Cause
-| CLIMATE.REGION     |   equipment failure |   fuel supply emergency |   intentional attack |   islanding |   public appeal |   severe weather |   system operability disruption |
-|:-------------------|--------------------:|------------------------:|---------------------:|------------:|----------------:|-----------------:|--------------------------------:|
-| Central            |               322   |                 10035.2 |                346.1 |       125.3 |          1410   |           3250   |                          2695.2 |
-| East North Central |             26435.3 |                 33971.2 |               2376   |         1   |           733   |           4434.8 |                          2610   |
-| Northeast          |               215.8 |                 14629.6 |                196   |       881   |          2655   |           4429.9 |                           773.5 |
-| Northwest          |               702   |                     1   |                373.8 |        73.3 |           898   |           4838   |                           141   |
-| South              |               295.8 |                 17482.5 |                325.6 |       493.5 |          1164   |           4391.3 |                           866.1 |
-| Southeast          |               554.5 |                   nan   |                504.7 |       nan   |          2865.4 |           2662.6 |                           169.3 |
-| Southwest          |               113.8 |                    76   |                265.7 |         2   |          2275   |          11572.9 |                           329.2 |
-| West               |               524.8 |                  6154.6 |                857.7 |       214.9 |          2028.1 |           2928.4 |                           363.7 |
-| West North Central |                61   |                   nan   |                 23.5 |        68.2 |           439.5 |           2442.5 |                           nan   |
+| CLIMATE.REGION      | equipment failure | fuel supply emergency | intentional attack | islanding | public appeal | severe weather | system operability disruption |
+| :------------------ | -----------------:| ---------------------:| ------------------:| --------:| -------------:| --------------:| ------------------------------:|
+| Central             |               322 |             10035.2   |             346.1  |    125.3 |          1410 |           3250 |                       2695.2 |
+| East North Central  |            26435.3|             33971.2   |            2376    |      1   |           733 |          4434.8|                        2610  |
+| Northeast           |             215.8 |             14629.6   |             196    |    881   |          2655 |          4429.9|                         773.5|
+| Northwest           |             702   |                 1     |             373.8  |     73.3 |           898 |           4838 |                         141   |
+| South               |             295.8 |             17482.5   |             325.6  |    493.5 |          1164 |          4391.3|                         866.1 |
+| Southeast           |             554.5 |                 nan   |             504.7  |     nan  |         2865.4|          2662.6|                         169.3 |
+| Southwest           |             113.8 |                76     |             265.7  |      2   |         2275  |         11572.9|                         329.2 |
+| West                |             524.8 |              6154.6   |             857.7  |    214.9 |         2028.1|          2928.4|                         363.7 |
+| West North Central  |              61   |                 nan   |              23.5  |     68.2 |          439.5|          2442.5|                          nan   |
 
 This pivot table reveals clear regional patterns in how long major power outages last, depending on their cause. For instance:
 
