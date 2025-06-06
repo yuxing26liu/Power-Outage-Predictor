@@ -4,61 +4,96 @@ title: Power-Outage-Risks-Analysis
 ---
 # Outage Severity Across the U.S.: Predicting Risk Factors Behind Major Power Failures
 
-** Yuxing Liu, Rocio Saez
+**Yuxing Liu, Rocio Saez**
 
-**Website Link**:
+## Introduction
 
-## Step 1: Introduction
-- What are the characteristics of major power outages with higher severity? Variables to consider include location, time, climate, land-use characteristics, electricity consumption patterns, economic characteristics, etc. What risk factors may an energy company want to look into when predicting the location and severity of its next major power outage?
+Power outages often strike without warning and can leave communities without power for hours or even days resulting in safety risks, lost productivity, and costly economic disruptions. By understanding which factors (such as outage cause, geographic region, or population density) are most predictive of how long an outage will last, utilities and emergency planners can proactively allocate repair crews, pre‐stage backup resources, and communicate realistic restoration timelines to customers. 
 
-- Predict the severity (in terms of number of customers, duration, or demand loss) of a major power outage.
-add a duration using the start adn 
-single variable analysis : time trend, location and cause 
-bivariate analysis outage duration and cause category, how server it is based on the location and duration, how lomg does each causes usually last. see if the states in certain region has a correratltion?  performed grouping with a pivot table, on Climate Region and Cause Category to see which regions experienced severe weather outages the most.
-different cause and what's the most likely cause for that region and feedback based on that. (Risk)
+In this project, we will examine the Major Power Outage Risks in the U.S. dataset provided by Purdue University which comprises **1,534** U.S. outage events reported between 2000 and 2016, with **57** total columns. This dataset captures detailed information on when and where outages occurred, what caused them, and how many customers were affected. The relevant columns we have are: 
 
-show the NaN table. where has the most customer and where they should close.Missingness Dependency 
-Cause Category
-First, I examine the distribution of Cause Category when Duration is missing vs not missing.
+**Relevant Columns:**
 
->**Null Hypothesis**: The distribution of Cause Category is the same when Duration is missing vs not missing.
-indicating that the missingness of Duration is dependent on Cause Category. Null Hypothesis: The distribution of Month is the same when Duration is missing vs not missing.
-
->**Alternate Hypothesis**: The distribution of Month is different when Duration is missing vs not missing.
-
-hypothesis testing: cause relate to duration, if it comes from the same distribution 
-
-hypothesies test on if the region impact on if they have the certain cause. 
-
-# Step 2 EDA Data Cleaning
-### Column Removal
-I removed the first three row of the data that includes the side note information about this dataset and the unit row
-The following land-use variables related to total land area and water surface were dropped from the dataset:
-The following columns related to state-level economic output (e.g., GSP, utility sector contribution) were dropped:
-- PC.REALGSP.STATE, PC.REALGSP.USA, PC.REALGSP.REL, PC.REALGSP.CHANGE
-- UTIL.REALGSP, TOTAL.REALGSP, UTIL.CONTRI, PI.UTIL.OFUSA
-
-These variables are valuable for economic resilience or investment-focused studies, but they were not directly relevant to my focus on outage severity and its common causes by region. My analysis emphasizes event characteristics, regional climate, electricity use, and land/population patterns.
+| Column Name                                  | Description                                                                                                                                      |
+| :------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OUTAGE.DURATION`                            | Total outage length in minutes. This is our response variable (the “duration” we aim to predict).                                                |
+| `CUSTOMERS.AFFECTED`                         | Number of customers impacted. Outages affecting more customers often require larger restoration efforts and thus take longer.                     |
+| `DEMAND.LOSS.MW`                             | Peak demand lost (in megawatts). Higher demand loss typically signals more extensive damage, correlating with longer repair times.                |
+| `CAUSE.CATEGORY`                             | High-level cause (e.g. “severe weather,” “equipment failure,” “intentional attack”). Certain causes (like hurricanes) are known to produce prolonged outages. |
+| `CLIMATE.REGION`                             | U.S. census-based climate region (e.g. “South,” “East North Central,” etc.). Captures broad weather-pattern differences and infrastructure vulnerabilities. |
+| `U.S._STATE`                                 | State where the outage occurred. Reflects variations in grid age, regulatory environment, and utility practices that can affect repair speed.     |
+| `POPPCT_URBAN`                               | Percentage of the state’s population living in urban areas. Higher urban density can mean faster crew mobilization but also more customers to restore. |
+| `OUTAGE.START.DATE` & `OUTAGE.START.TIME`     | Combined into `OUTAGE.START` timestamp. Enables extraction of month, day-of-week, and holiday/weekday indicators, all of which influence crew availability. |
+| `OUTAGE.RESTORATION.DATE` & `OUTAGE.RESTORATION.TIME` | Combined into `OUTAGE.RESTORATION`. Used (with `OUTAGE.START`) to compute `OUTAGE.DURATION` and to assess missingness when restoration times are unreported. |
 
 
-- AREAPCT_URBAN, AREAPCT_UC, PCT_LAND, PCT_WATER_TOT, PCT_WATER_INLAND
+We will initially clean and explore the outage dataset, assess missingness patterns, and use hypothesis tests to answer targeted questions about outage characteristics. Doing this will allow us to have a clear understanding of which features appear most related to outage severity and whether any statistical relationships hold up under formal testing. Then, we will leverage the insights we gathered to build a regression model that predicts the duration of a power outage at the moment it begins. We start with a simple baseline, engineer additional features and tune hyperparameters for a final model, and then evaluate whether that model treats certain subgroups (e.g., by region) fairly.
 
-These variables, while informative, were not directly relevant to my research question about outage severity. Since my focus is on population density, climate, electricity use, and economic characteristics, I retained variables more closely tied to human impact and energy infrastructure rather than surface geography.
+This dataset will help us answer the question: **which combination of factors—specifically outage cause, geographic location, climate region, population density, and time‐of‐year—best predicts how long (in minutes) a major U.S. power outage will last?**
 
-Since one of the key goals of this project is to understand the **severity** of major power outages, I focus on three main severity metrics: 
 
-- `CUSTOMERS.AFFECTED`
-- `DEMAND.LOSS.MW`
-- `OUTAGE.DURATION`
+# Data Cleaning & Exploratory Data Analysis
 
-Among these, `OUTAGE.DURATION` (measured in minutes) is a direct indicator of how long an outage lasted — a critical dimension of impact for residents, businesses, and infrastructure. An outage without a known duration cannot be meaningfully compared or modeled for severity.
+## Data Cleaning
 
-Therefore, I dropped all rows with missing values in the `OUTAGE.DURATION` column. These rows (58 total) represent cases where the restoration time was either not recorded or not reported, making them unsuitable for this analysis focused on quantifying outage severity.
+### Remove Unnecessary Rows
+- The first three rows of the raw data contain metadata and unit‐definition information, not actual outage records so they were removed to ensure that subsequent processing only includes valid event entries.
 
-The power outage start date and time is given by 'OUTAGE.START.DATE' and 'OUTAGE.START.TIME'. I convert these two columns were combined into one pd.Timestamp column. Combine 'OUTAGE.START.DATE' and 'OUTAGE.START.TIME' into a new pd.Timestamp column called 'OUTAGE.START'. Similarly, combine 'OUTAGE.RESTORATION.DATE' and 'OUTAGE.RESTORATION.TIME' into a new pd.Timestamp column called 'OUTAGE.RESTORATION'.
+### Drop Irrelevant Columns
 
-# Step 2 EDA  Univariate Analysis
-This bar chart displays the distribution of major power outages across different cause categories. The most common cause by far is severe weather, followed by intentional attacks and system operability disruptions. This highlights the significant impact of natural events and security threats on the power grid. Understanding the dominant causes helps utilities prioritize infrastructure improvements and disaster response strategies.
+#### Land‐Use Columns
+The following land‐use variables (related to total land area and water surface) were dropped because they do not directly inform outage severity:
+- `AREAPCT_URBAN`
+- `AREAPCT_UC`
+- `PCT_LAND`
+- `PCT_WATER_TOT`
+- `PCT_WATER_INLAND`
+
+#### State‐Level Economic Output Columns
+The following state‐economic columns (e.g., gross state product metrics, utility sector contributions) were dropped because they focus on broad economic analyses rather than immediate outage impact:
+- `PC.REALGSP.STATE`
+- `PC.REALGSP.USA`
+- `PC.REALGSP.REL`
+- `PC.REALGSP.CHANGE`
+- `UTIL.REALGSP`
+- `TOTAL.REALGSP`
+- `UTIL.CONTRI`
+- `PI.UTIL.OFUSA`
+
+> **Why?:**  
+> These variables, while informative, were not directly relevant to my research question about outage severity. Since my focus is on population density, climate, electricity use, and economic characteristics, I retained variables more closely tied to human impact and energy infrastructure rather than surface geography.
+
+
+### Focus on Severity Metrics & Handle Missing Duration
+Since one of the key goals of this project is to understand the **severity** of major power outages, we focus on three core metrics:
+- `CUSTOMERS.AFFECTED` (number of customers impacted)
+- `DEMAND.LOSS.MW` (peak megawatt demand lost)
+- `OUTAGE.DURATION` (total outage length in minutes)
+
+Among these, `OUTAGE.DURATION` is a direct indicator of how long an outage lasted — a critical dimension of impact for residents, businesses, and infrastructure. An outage without a known duration cannot be meaningfully compared or modeled for severity. Therefore:
+- **All rows with missing `OUTAGE.DURATION`** (58 total) were dropped from the dataset.
+- This ensures that every remaining outage event has a known start‐to‐restoration interval, allowing for consistent severity modeling.
+
+### Combine Date & Time into Timestamps
+The original data provides separate columns for date and time. To streamline temporal analysis, we:
+1. **Combine**  
+   - `OUTAGE.START.DATE` + `OUTAGE.START.TIME` → new column `OUTAGE.START` (type: `pd.Timestamp`)  
+   - `OUTAGE.RESTORATION.DATE` + `OUTAGE.RESTORATION.TIME` → new column `OUTAGE.RESTORATION` (type: `pd.Timestamp`)
+2. **Drop** the original separate date/time columns (`OUTAGE.START.DATE`, `OUTAGE.START.TIME`, `OUTAGE.RESTORATION.DATE`, `OUTAGE.RESTORATION.TIME`).
+
+> **Why?**  
+> Having a single timestamp for start and restoration allows us to easily extract:
+> - Month and day‐of‐week (for seasonality analysis)  
+> - Holiday versus weekday indicators (for resource availability)  
+> - Direct computation of `OUTAGE.DURATION`  
+
+After completing these steps, the cleaned DataFrame (`df_clean`) contains only the columns and rows relevant for our exploratory analysis and modeling of outage duration. Below is the head of the cleaned DataFrame for verification:
+
+
+## Univariate Analysis
+In our exploratory data analysis, we performed univariate analysis to examine the distribution of single variables.
+
+We first wanted to see  the distribution of major power outages across different cause categories so we used a **bar chart** to display this. 
 
 <iframe
   src="assets/cause_category_bar.html"
@@ -67,7 +102,10 @@ This bar chart displays the distribution of major power outages across different
   frameborder="0"
 ></iframe>
 
-This plot shows the number of major outages by U.S. state from 2000 to 2016. California leads with the highest number of outages, followed by Texas, Michigan, and Washington. States with large populations, varied terrain, or weather exposure tend to experience more frequent outages. The long tail of the distribution shows many states with relatively few major outages, indicating regional variation in outage frequency.
+The most common cause by far is severe weather, followed by intentional attacks and system operability disruptions. This highlights the significant impact of natural events and security threats on the power grid. Understanding the dominant causes helps utilities prioritize infrastructure improvements and disaster response strategies.
+
+Then, we also wanted to see the number of major outages by U.S. state from 2000 to 2016, so we used another **bar chart**. 
+
 <iframe
   src="assets/outages_by_state.html"
   width="800"
@@ -75,9 +113,8 @@ This plot shows the number of major outages by U.S. state from 2000 to 2016. Cal
   frameborder="0"
 ></iframe>
 
+To better understand, we created a **choropleth map** of power outages by state where the darker shades indicate states with more frequent outages.
 
-### Choropleth Map of Power Outages by State
-This interactive map shows the number of major power outages by U.S. state from 2000–2016. Darker shades indicate states with more frequent outages.
 <iframe
   src="assets/outages_choropleth_map.html"
   width="800"
@@ -85,8 +122,14 @@ This interactive map shows the number of major power outages by U.S. state from 
   frameborder="0"
 ></iframe>
 
-### Outage Duration by Climate Region
-Are certain climate regions more prone to severe outages (longer duration or more affected customers)?
+Through both of these graphs, we can see that California leads with the highest number of outages, followed by Texas, Michigan, and Washington. States with large populations, varied terrain, or weather exposure tend to experience more frequent outages. The long tail of the distribution shows many states with relatively few major outages, indicating regional variation in outage frequency.
+
+
+## Bivariate Analysis
+We then performed bivariate analysis to examine the relationship between two of our columns. 
+
+We first tried to see if certain climate regions were more prone to severe outages (longer duration or more affected customers) through our **box plot**.
+
 <iframe
   src="assets/outage_by_climate_region.html"
   width="800"
@@ -94,20 +137,20 @@ Are certain climate regions more prone to severe outages (longer duration or mor
   frameborder="0"
 ></iframe>
 
-This box plot shows how outage duration varies across different U.S. climate regions. The East North Central and Northeast regions display longer and more variable outage durations, as seen from the wider spread and presence of high outliers. This suggests that regional climate factors—like extreme snow or storms—may affect how long it takes to restore power.
+This plot allows us to see how outage duration varies across different U.S. climate regions. The East North Central and Northeast regions display longer and more variable outage durations, as seen from the wider spread and presence of high outliers. This suggests that regional climate factors—like extreme snow or storms—may affect how long it takes to restore power.
 
-### Urban Population % vs. Customers Affected
-Is there a relationship between % urban population (POPPCT_URBAN) and severity?
+Then, we tried to see if there is a relationship between percentage (%) of urban population (POPPCT_URBAN) and its severity through a **scatterplot**.
+
 <iframe
   src="assets/urban_vs_customers.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
+
 This scatter plot explores the relationship between how urban a state is and how many customers are affected during major outages. While most outages cluster below 1 million affected customers, there is a noticeable upward spread in highly urbanized states (above 80% urban population), suggesting denser regions might be more vulnerable to large-scale service disruption.
 
-### Outage Duration by Month
-Do outages in summer or winter tend to be longer or larger?
+Lastly, we tried to see if outages in summer or winter tend to be longer or larger through a **box plot**.
 
 <iframe
   src="assets/duration_by_month.html"
@@ -118,7 +161,9 @@ Do outages in summer or winter tend to be longer or larger?
 
 This box plot breaks down outage duration by month to reveal potential seasonal effects. August, September, and October show slightly higher median durations and more high-end outliers, which may correspond to peak storm or hurricane seasons. These findings suggest that certain months may require increased readiness and response resources.
 
-### Average Outage Duration by Climate Region and Cause
+## Grouping % Aggregates
+Below is a pivot table showing the **mean outage duration (in minutes)** for each combination of climate region and cause category. Rows correspond to `CLIMATE.REGION`, and columns correspond to `CAUSE.CATEGORY`:
+
 | CLIMATE.REGION      | equipment failure | fuel supply emergency | intentional attack | islanding | public appeal | severe weather | system operability disruption |
 | :------------------ | -----------------:| ---------------------:| ------------------:| --------:| -------------:| --------------:| ------------------------------:|
 | Central             |               322 |             10035.2   |             346.1  |    125.3 |          1410 |           3250 |                       2695.2 |
@@ -132,12 +177,9 @@ This box plot breaks down outage duration by month to reveal potential seasonal 
 | West North Central  |              61   |                 nan   |              23.5  |     68.2 |          439.5|          2442.5|                          nan   |
 
 This pivot table reveals clear regional patterns in how long major power outages last, depending on their cause. For instance:
-
-Severe weather causes especially long outages in the Southwest and Northwest (11,572.9 and 4,838.0 minutes, respectively).
-
-Fuel supply emergencies lead to very prolonged outages in East North Central and South.
-
-Outages due to equipment failure are unusually high in East North Central, potentially pointing to aging or fragile infrastructure.
+- Severe weather causes especially long outages in the Southwest and Northwest (11,572.9 and 4,838.0 minutes, respectively).
+- Fuel supply emergencies lead to very prolonged outages in East North Central and South.
+- Outages due to equipment failure are unusually high in East North Central, potentially pointing to aging or fragile infrastructure.
 
 The regional disparities underscore that the same cause may have drastically different impacts depending on local conditions, infrastructure readiness, and climate challenges. This insight can guide location-specific planning for utilities and policymakers.
 
