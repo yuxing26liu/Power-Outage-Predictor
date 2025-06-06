@@ -21,10 +21,10 @@ show the NaN table. where has the most customer and where they should close.Miss
 Cause Category
 First, I examine the distribution of Cause Category when Duration is missing vs not missing.
 
-Null Hypothesis: The distribution of Cause Category is the same when Duration is missing vs not missing.
+>**Null Hypothesis**: The distribution of Cause Category is the same when Duration is missing vs not missing.
 indicating that the missingness of Duration is dependent on Cause Category. Null Hypothesis: The distribution of Month is the same when Duration is missing vs not missing.
 
-Alternate Hypothesis: The distribution of Month is different when Duration is missing vs not missing.
+>**Alternate Hypothesis**: The distribution of Month is different when Duration is missing vs not missing.
 
 hypothesis testing: cause relate to duration, if it comes from the same distribution 
 

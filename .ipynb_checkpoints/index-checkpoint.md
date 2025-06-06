@@ -21,10 +21,10 @@ show the NaN table. where has the most customer and where they should close.Miss
 Cause Category
 First, I examine the distribution of Cause Category when Duration is missing vs not missing.
 
-Null Hypothesis: The distribution of Cause Category is the same when Duration is missing vs not missing.
+>**Null Hypothesis**: The distribution of Cause Category is the same when Duration is missing vs not missing.
 indicating that the missingness of Duration is dependent on Cause Category. Null Hypothesis: The distribution of Month is the same when Duration is missing vs not missing.
 
-Alternate Hypothesis: The distribution of Month is different when Duration is missing vs not missing.
+>**Alternate Hypothesis**: The distribution of Month is different when Duration is missing vs not missing.
 
 hypothesis testing: cause relate to duration, if it comes from the same distribution 
 
@@ -119,17 +119,17 @@ Do outages in summer or winter tend to be longer or larger?
 This box plot breaks down outage duration by month to reveal potential seasonal effects. August, September, and October show slightly higher median durations and more high-end outliers, which may correspond to peak storm or hurricane seasons. These findings suggest that certain months may require increased readiness and response resources.
 
 ### Average Outage Duration by Climate Region and Cause
-| CLIMATE.REGION     |   equipment failure |   fuel supply emergency |   intentional attack |   islanding |   public appeal |   severe weather |   system operability disruption |
-|:-------------------|--------------------:|------------------------:|---------------------:|------------:|----------------:|-----------------:|--------------------------------:|
-| Central            |               322   |                 10035.2 |                346.1 |       125.3 |          1410   |           3250   |                          2695.2 |
-| East North Central |             26435.3 |                 33971.2 |               2376   |         1   |           733   |           4434.8 |                          2610   |
-| Northeast          |               215.8 |                 14629.6 |                196   |       881   |          2655   |           4429.9 |                           773.5 |
-| Northwest          |               702   |                     1   |                373.8 |        73.3 |           898   |           4838   |                           141   |
-| South              |               295.8 |                 17482.5 |                325.6 |       493.5 |          1164   |           4391.3 |                           866.1 |
-| Southeast          |               554.5 |                   nan   |                504.7 |       nan   |          2865.4 |           2662.6 |                           169.3 |
-| Southwest          |               113.8 |                    76   |                265.7 |         2   |          2275   |          11572.9 |                           329.2 |
-| West               |               524.8 |                  6154.6 |                857.7 |       214.9 |          2028.1 |           2928.4 |                           363.7 |
-| West North Central |                61   |                   nan   |                 23.5 |        68.2 |           439.5 |           2442.5 |                           nan   |
+| CLIMATE.REGION      | equipment failure | fuel supply emergency | intentional attack | islanding | public appeal | severe weather | system operability disruption |
+| :------------------ | -----------------:| ---------------------:| ------------------:| --------:| -------------:| --------------:| ------------------------------:|
+| Central             |               322 |             10035.2   |             346.1  |    125.3 |          1410 |           3250 |                       2695.2 |
+| East North Central  |            26435.3|             33971.2   |            2376    |      1   |           733 |          4434.8|                        2610  |
+| Northeast           |             215.8 |             14629.6   |             196    |    881   |          2655 |          4429.9|                         773.5|
+| Northwest           |             702   |                 1     |             373.8  |     73.3 |           898 |           4838 |                         141   |
+| South               |             295.8 |             17482.5   |             325.6  |    493.5 |          1164 |          4391.3|                         866.1 |
+| Southeast           |             554.5 |                 nan   |             504.7  |     nan  |         2865.4|          2662.6|                         169.3 |
+| Southwest           |             113.8 |                76     |             265.7  |      2   |         2275  |         11572.9|                         329.2 |
+| West                |             524.8 |              6154.6   |             857.7  |    214.9 |         2028.1|          2928.4|                         363.7 |
+| West North Central  |              61   |                 nan   |              23.5  |     68.2 |          439.5|          2442.5|                          nan   |
 
 This pivot table reveals clear regional patterns in how long major power outages last, depending on their cause. For instance:
 
@@ -233,7 +233,7 @@ Here, we can see improvement over the baseline, indicating that adding state‐l
 This interactive plot shows predicted vs. actual outage durations on the test set. Each vertical gray line represents the error between the actual value and the model’s prediction.
 
 <iframe
-  src="assets/prediction_vs_actual.html"
+  src="assets/actual_vs_predicted.html"
   width="900"
   height="500"
   frameborder="0"
@@ -251,3 +251,10 @@ Before running the permutation test, we clearly define our groups, metric, and h
 > **alternative hypothesis (H₁):** RMSE for South is greater than RMSE_ENC, meaning the model performs worse for the South.
 
 To test this, we compute the observed difference Δ_obs = RMSE_South − RMSE_ENC on the held‐out test set. We then randomly permute the “region” labels among the test examples 1,000 times, recomputing Δ_perm = RMSE_perm_South − RMSE_perm_ENC for each shuffle to build a null distribution. The one‐sided p‐value is the fraction of Δ_perm ≥ Δ_obs. If p < 0.05, we reject H₀ and conclude a significant fairness gap; otherwise, we fail to reject H₀, indicating no evidence that the model’s error is systematically higher for South.  
+<iframe
+  src="assets/fairness_rmse_hist.html"
+  width="800"
+  height="500"
+  frameborder="0"
+></iframe>
+Here, we compared RMSE for “South” versus “East North Central” outages. Our **null hypothesis** was that RMSE_South = RMSE_ENC (no difference), and the **alternative hypothesis** was RMSE_South > RMSE_ENC (worse performance for South). After computing Δ_obs = RMSE_South − RMSE_ENC and running 1 000 label‐permutations to build a null distribution of Δ_perm, we found that Δ_obs fell well within the bulk of Δ_perm and the one‐sided p‐value was much greater than 0.05. In other words, the observed RMSE gap could easily occur by chance, so we fail to reject H₀. Thus, there is no evidence that our model’s error is significantly higher for South compared to East North Central.
