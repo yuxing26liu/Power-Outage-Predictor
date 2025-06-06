@@ -233,7 +233,7 @@ Here, we can see improvement over the baseline, indicating that adding state‐l
 This interactive plot shows predicted vs. actual outage durations on the test set. Each vertical gray line represents the error between the actual value and the model’s prediction.
 
 <iframe
-  src="assets/actual_vs_predicted.html.html"
+  src="assets/actual_vs_predicted.html"
   width="900"
   height="500"
   frameborder="0"
