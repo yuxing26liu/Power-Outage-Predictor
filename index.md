@@ -233,7 +233,7 @@ Here, we can see improvement over the baseline, indicating that adding state‐l
 This interactive plot shows predicted vs. actual outage durations on the test set. Each vertical gray line represents the error between the actual value and the model’s prediction.
 
 <iframe
-  src="assets/prediction_vs_actual.html"
+  src="assets/actual_vs_predicted.html.html"
   width="900"
   height="500"
   frameborder="0"
@@ -251,3 +251,10 @@ Before running the permutation test, we clearly define our groups, metric, and h
 > **alternative hypothesis (H₁):** RMSE for South is greater than RMSE_ENC, meaning the model performs worse for the South.
 
 To test this, we compute the observed difference Δ_obs = RMSE_South − RMSE_ENC on the held‐out test set. We then randomly permute the “region” labels among the test examples 1,000 times, recomputing Δ_perm = RMSE_perm_South − RMSE_perm_ENC for each shuffle to build a null distribution. The one‐sided p‐value is the fraction of Δ_perm ≥ Δ_obs. If p < 0.05, we reject H₀ and conclude a significant fairness gap; otherwise, we fail to reject H₀, indicating no evidence that the model’s error is systematically higher for South.  
+<iframe
+  src="assets/fairness_rmse_hist.html"
+  width="800"
+  height="500"
+  frameborder="0"
+></iframe>
+Here, we compared RMSE for “South” versus “East North Central” outages. Our **null hypothesis** was that RMSE_South = RMSE_ENC (no difference), and the **alternative hypothesis** was RMSE_South > RMSE_ENC (worse performance for South). After computing Δ_obs = RMSE_South − RMSE_ENC and running 1 000 label‐permutations to build a null distribution of Δ_perm, we found that Δ_obs fell well within the bulk of Δ_perm and the one‐sided p‐value was much greater than 0.05. In other words, the observed RMSE gap could easily occur by chance, so we fail to reject H₀. Thus, there is no evidence that our model’s error is significantly higher for South compared to East North Central.
