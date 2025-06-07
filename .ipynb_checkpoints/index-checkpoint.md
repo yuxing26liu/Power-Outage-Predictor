@@ -29,7 +29,7 @@ In this project, we will examine the Major Power Outage Risks in the U.S. datase
 
 We will initially clean and explore the outage dataset, assess missingness patterns, and use hypothesis tests to answer targeted questions about outage characteristics. Doing this will allow us to have a clear understanding of which features appear most related to outage severity and whether any statistical relationships hold up under formal testing. Then, we will leverage the insights we gathered to build a regression model that predicts the duration of a power outage at the moment it begins. We start with a simple baseline, engineer additional features and tune hyperparameters for a final model, and then evaluate whether that model treats certain subgroups (e.g., by region) fairly.
 
-This dataset will help us answer the question: **which combination of factors—specifically outage cause, geographic location, climate region, population density, and time‐of‐year—best predicts how long (in minutes) a major U.S. power outage will last?**
+This dataset will help us answer the question: **which combination of factors (outage cause, geographic location, climate region, population density, time‐of‐year, etc.) best predicts how long (in minutes) a major U.S. power outage will last?**
 
 
 # Data Cleaning & Exploratory Data Analysis
@@ -87,7 +87,7 @@ The original data provides separate columns for date and time. To streamline tem
 > - Holiday versus weekday indicators (for resource availability)  
 > - Direct computation of `OUTAGE.DURATION`  
 
-After completing these steps, the cleaned DataFrame (`df_clean`) contains only the columns and rows relevant for our exploratory analysis and modeling of outage duration. Below is the head of the cleaned DataFrame for verification:
+After completing these steps, the cleaned DataFrame contains only the columns and rows relevant for our exploratory analysis and modeling of outage duration. Below is the head of the cleaned DataFrame for verification:
 
 
 ## Univariate Analysis
@@ -139,7 +139,7 @@ We first tried to see if certain climate regions were more prone to severe outag
 
 This plot allows us to see how outage duration varies across different U.S. climate regions. The East North Central and Northeast regions display longer and more variable outage durations, as seen from the wider spread and presence of high outliers. This suggests that regional climate factors—like extreme snow or storms—may affect how long it takes to restore power.
 
-Then, we tried to see if there is a relationship between percentage (%) of urban population (POPPCT_URBAN) and its severity through a **scatterplot**.
+Then, we tried to see if there is a relationship between percentage (%) of urban population (`POPPCT_URBAN`) and its severity through a **scatterplot**.
 
 <iframe
   src="assets/urban_vs_customers.html"
@@ -161,7 +161,7 @@ Lastly, we tried to see if outages in summer or winter tend to be longer or larg
 
 This box plot breaks down outage duration by month to reveal potential seasonal effects. August, September, and October show slightly higher median durations and more high-end outliers, which may correspond to peak storm or hurricane seasons. These findings suggest that certain months may require increased readiness and response resources.
 
-## Grouping % Aggregates
+## Grouping & Aggregates
 Below is a pivot table showing the **mean outage duration (in minutes)** for each combination of climate region and cause category. Rows correspond to `CLIMATE.REGION`, and columns correspond to `CAUSE.CATEGORY`:
 
 | CLIMATE.REGION      | equipment failure | fuel supply emergency | intentional attack | islanding | public appeal | severe weather | system operability disruption |
@@ -187,11 +187,11 @@ The regional disparities underscore that the same cause may have drastically dif
 # Assessment of Missingness
 
 ## NMAR Analysis
-We believe the column CUSTOMERS.AFFECTED is likely Not Missing At Random (NMAR) since the decision to leave the value blank may depend on the value itself — for example, if only a small number of customers were affected and the utility deemed it not worth reporting. In such cases, the missingness depends directly on the (unseen) value of CUSTOMERS.AFFECTED, making it NMAR.
+We believe the column `CUSTOMERS.AFFECTED` is likely Not Missing At Random (NMAR) since the decision to leave the value blank may depend on the value itself — for example, if only a small number of customers were affected and the utility deemed it not worth reporting. In such cases, the missingness depends directly on the (unseen) value of `CUSTOMERS.AFFECTED`, making it NMAR.
 
 To determine if this missingness could instead be MAR, we would need additional metadata about the reporting policies or criteria used by each utility during the event, such as thresholds for whether customer impact was logged.
 
-We will test if the DEMAND.LOSS.MW missingness is related to/depends on the cause of the outage.
+We will test if the `DEMAND.LOSS.MW` missingness is related to/depends on the cause of the outage.
 
 <iframe
   src="assets/demand_missing_permutation.html"
@@ -202,14 +202,14 @@ We will test if the DEMAND.LOSS.MW missingness is related to/depends on the caus
 
 As seen in the histogram above, the observed standard deviation is far outside the range of the null distribution, with a p-value < 0.001.
 
-This indicates that missingness in DEMAND.LOSS.MW is dependent on CAUSE.CATEGORY, suggesting Missing At Random (MAR). In other words, the missingness can be explained by another observed column.
+This indicates that missingness in `DEMAND.LOSS.MW` is dependent on `CAUSE.CATEGORY`, suggesting Missing At Random (MAR). In other words, the missingness can be explained by another observed column.
 
 ## Missingness Dependency
-We will conduct a permutation test to assess whether the missingness in the DEMAND.LOSS.MW column depends on OUTAGE.START.TIME.
+We will conduct a permutation test to assess whether the missingness in the `DEMAND.LOSS.MW` column depends on `OUTAGE.START.TIME`.
 
->**Null Hypothesis**: The distribution of DEMAND.LOSS.MW is the **same** when OUTAGE.START.TIME is missing vs not missing.
+>**Null Hypothesis**: The distribution of `DEMAND.LOSS.MW` is the **same** when `OUTAGE.START.TIME` is missing vs not missing.
 
->**Alternate Hypothesis**: The distribution of DEMAND.LOSS.MW is **different** when OUTAGE.START.TIME is missing vs not missing.
+>**Alternate Hypothesis**: The distribution of `DEMAND.LOSS.MW` is **different** when `OUTAGE.START.TIME` is missing vs not missing.
 
 <iframe
   src="assets/time_missingness_permutation.html"
@@ -218,7 +218,7 @@ We will conduct a permutation test to assess whether the missingness in the DEMA
   frameborder="0"
 ></iframe>
 
-The test statistic (standard deviation of missingness across times) closely matches the null distribution generated by permutation. Since the observed value is not extreme and falls well within the range of expected variation under the null hypothesis, we conclude that the missingness of DEMAND.LOSS.MW **does not** depend on OUTAGE.START.TIME.
+The test statistic (standard deviation of missingness across times) closely matches the null distribution generated by permutation. Since the observed value is not extreme and falls well within the range of expected variation under the null hypothesis, we conclude that the missingness of `DEMAND.LOSS.MW` **does not** depend on `OUTAGE.START.TIME`.
 
 Therefore, with respect to this column, the missingness is consistent with Missing Completely At Random (MCAR).
 
@@ -262,12 +262,11 @@ This histogram shows the distribution of outage durations (in minutes) across al
 ></iframe>
 
 At the time of prediction, we would know these given features: 
-- CAUSE.CATEGORY 
-- CLIMATE.REGION 
-- MONTH 
-- U.S._STATE
-- POPPCT_URBAN
-- POPDEN_URBAN
+- `CAUSE.CATEGORY` 
+- `CLIMATE.REGION` 
+- `U.S._STATE`
+- `OUTAGE.START`
+- `POPDEN_URBAN`
 
 This information will allow us to predict how long (in minutes) a power outage will last.
 
@@ -298,15 +297,16 @@ In other words, **cause and region alone capture very little of the signal, and 
 
 
 ## Step 7: Final Model
-Building on the baseline and our ideas to improve our model, we will now include **4 additional predictors** and **4 engineered features**: 
+Building on the baseline and our ideas to improve our model, we will now include, apart from `CAUSE.CATEGORY` and `CLIMATE.REGION`,  **2 additional predictors** and **2 engineered features**: 
 
-### Additional Predictors
+### Current Predictors
 1. **`CAUSE.CATEGORY`** (nominal categorical)  
    - **Why:** Different causes have inherently different repair complexities. For example, severe weather events (hurricanes, ice storms) often require more extensive crew mobilization and infrastructure repair, leading to longer outages than equipment failures or intentional attacks.
 
 2. **`CLIMATE.REGION`** (nominal categorical)  
    - **Why:** Geographic regions experience distinct weather patterns and grid‐hardening standards. The South, for instance, is prone to hurricanes, while the Northeast faces Nor’easters—each affecting repair time differently.
 
+### Additional Predictors
 3. **`U.S._STATE`** (nominal categorical)  
    - **Why:** State‐level regulatory environments, utility practices, and infrastructure age vary. Two outages from the same cause in different states can have very different restoration timelines depending on local crew availability, permitting processes, and grid resilience measures.
 
@@ -314,24 +314,17 @@ Building on the baseline and our ideas to improve our model, we will now include
    - **Why:** Urban density influences both the number of customers affected and how quickly crews can access damaged equipment. High‐density areas may have more complex logistics (e.g., traffic delays, multi‐failure circuits) but can also mobilize urban‐focused resources faster.
 
 
-### Engineered
-5. **`month_sin`**   
-   - **Derived From:** `MONTH`, places December (12) and January (1) close together on a circular scale
-   - **Why:** allows the model to recognize that year‐end and year‐beginning months are adjacent in seasonal context.  
+### Feature Engineered
 
-6. **`month_cos`**   
-   - **Derived From:** `MONTH`, creating a continuous representation where December (12) and January (1) are adjacent on a circle.  
-   - **Why:** Complements `month_sin` by allowing the model to learn smooth, continuous seasonal effects without artificial “jumps” between December and January.
-
-7. **`dow`** (quantitative, ordinal 0–6)  
+5. **`dow`** (quantitative, ordinal 0–6)  
    - **Derived From:** `OUTAGE.START` timestamp, which returns 0 for Monday through 6 for Sunday.  
    - **Why:** Day‐of‐week can influence crew staffing and resource availability. For example, outages beginning on a Monday may be addressed more quickly than those on a Saturday because more crews and parts suppliers are fully operational during the workweek.
 
-8. **`is_weekend`** (binary categorical)  
+6. **`is_weekend`** (binary categorical)  
    - **Derived From:** `dow`,  assigning 1 for weekend outages, 0 otherwise.  
-   - **Why:** Weekend outages often face slower mobilization—fewer on‐call crews, reduced staffing, and limited access to external contractors. A binary flag allows the model to adjust its duration prediction when an outage starts on a Saturday or Sunday versus a weekday.  
+   - **Why:** Weekend outages often face slower mobilization—fewer on‐call crews, reduced staffing, and limited access to external contractors, so a binary flag allows the model to adjust its duration prediction when an outage starts on a Saturday or Sunday versus a weekday.  
 
-We apply a `ColumnTransformer` with a `OneHotEncoder(handle_unknown="ignore")` to the three categorical features, standardizes the two numeric features (MONTH, POPDEN_URBAN), and passes the four engineered features (month_sin, month_cos, dow, is_weekend) through unchanged. 
+We apply a `ColumnTransformer` with a `OneHotEncoder(handle_unknown="ignore")` to the three categorical features, standardizes the one numeric features (POPDEN_URBAN), and passes the two engineered features (dow, is_weekend) through unchanged. 
 
 Instead of a random forest, we chose a **Histogram-Based Gradient Boosting Regressor** (`HistGradientBoostingRegressor`) within a Pipeline because:
 
@@ -342,12 +335,12 @@ Instead of a random forest, we chose a **Histogram-Based Gradient Boosting Regre
 We then performed a GridSearchCV over these hyperparameters (5‐fold cross‐validation, optimizing for RMSE) over max_iter (200, 400, 600), max_leaf_nodes (15, 31, 63), and learning_rate (0.1, 0.05, 0.01) using 5‐fold cross‐validation on the training set, optimizing for RMSE. Our best hyperparamters were:
 - 'hgb__learning_rate': 0.01
 - 'hgb__max_iter': 200
-- 'hgb__max_leaf_nodes': 63
+- 'hgb__max_leaf_nodes': 15
 
 With that we get this: 
 
->>Filtered‐Data Model Test RMSE = 1329.56 minutes
->>Filtered‐Data Model Test R²  = 0.4004
+>Filtered‐Data Model Test RMSE = 1399.90 minutes
+>Filtered‐Data Model Test R²  = 0.3353
 
 This interactive plot shows predicted vs. actual outage durations on the test set. Each vertical gray line represents the error between the actual value and the model’s prediction.
 
@@ -358,7 +351,7 @@ This interactive plot shows predicted vs. actual outage durations on the test se
   frameborder="0"
 ></iframe>
 
-Here, we can see **improvement** over the baseline since our RMSE decreased and our R² increased. RMSE = 1329.56 (≈ 22.15 hours), meaning its outage‐duration predictions are **off by about 22 hours** on average and its R² of 0.4004 indicates it now **explains 40.04%** of the variance. The most likely reason our R² is **still** low and RMSE high is that **outage durations are still extremely skewed**. This indicates that adding state‐level, population-density, and temporal features—and using a boosted tree with hyperparameter tuning—provides substantial additional predictive power. Since our model improved this shows these efforts had a positive impact on the model, however, since we never reached our goal of R^2 > 0.75 which indicates a good model, this indicates that while the HistGradientBoostingRegressor captures some predictive structure, most of the variation in duration remains unaccounted for.
+Here, we can see **improvement** over the baseline since our RMSE decreased and our R² increased. RMSE = 1329.56 (≈ 23.33 hours), meaning its outage‐duration predictions are **off by about 23 hours** on average and its R² of 0.3353 indicates it now **explains 33.53%** of the variance. The most likely reason our R² is **still** low and RMSE high is that **outage durations are still extremely skewed**. This indicates that adding state‐level, population-density, and temporal features—and using a boosted tree with hyperparameter tuning—provides substantial additional predictive power. Since our model improved this shows these efforts had a positive impact on the model, however, since we never reached our goal of R^2 > 0.75 which indicates a good model, this indicates that while the HistGradientBoostingRegressor captures some predictive structure, most of the variation in duration remains unaccounted for.
 
 ## Step 8: Fairness Analysis
 
@@ -378,8 +371,7 @@ Permutation Test Procedure
    - **Δ_obs = RMSE_South − RMSE_ENC**
 2. Perform 1,000 permutations:  
    - Shuffle the `CLIMATE.REGION` labels among test examples.  
-   - Compute **Δ_perm = RMSE_perm_South − RMSE_perm_ENC** for each shuffled assignment.  
-   - Record \(\Delta_{\text{perm}} = \text{RMSE}_{\text{perm, South}} - \text{RMSE}_{\text{perm, ENC}}\).  
+   - Compute **Δ_perm = RMSE_perm_South − RMSE_perm_ENC** for each shuffled assignment.   
 3. The one‐sided p‐value is the fraction of Δ_perm ≥ Δ_obs.  
 
 If p < 0.05, we reject the null hyporthesis and conclude a significant fairness gap; otherwise, we fail to reject the null hypothesis, indicating no evidence that the model’s error is systematically higher for South.  
@@ -391,4 +383,4 @@ If p < 0.05, we reject the null hyporthesis and conclude a significant fairness 
   frameborder="0"
 ></iframe>
 
-After computing Δ_obs = RMSE_South − RMSE_ENC and running 1 000 label‐permutations to build a null distribution of Δ_perm, we found that Δ_obs fell well within the bulk of Δ_perm and the one‐sided p‐value of **0.7140** which is much greater than 0.05. In other words, the observed RMSE gap could easily occur by chance, so we **fail to reject the null hypothesis**. Thus, there is no evidence that our model’s error is significantly higher for South compared to East North Central.
+After computing Δ_obs = RMSE_South − RMSE_ENC and running 1 000 label‐permutations to build a null distribution of Δ_perm, we found that Δ_obs fell well within the bulk of Δ_perm and the one‐sided p‐value of **0.4590** which is much greater than 0.05. In other words, we **fail to reject the null hypothesis**. Thus, there is no evidence that our model’s error is significantly higher for South compared to East North Central.
