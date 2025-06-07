@@ -377,9 +377,9 @@ Permutation Test Procedure
 If p < 0.05, we reject the null hyporthesis and conclude a significant fairness gap; otherwise, we fail to reject the null hypothesis, indicating no evidence that the model’s error is systematically higher for South.  
 
 <iframe
-  src="assets/fairness_rmse_hist.html"
-  width="800"
-  height="500"
+  src="assets/fairness_rmse_distribution.html"
+  width="850"
+  height="600"
   frameborder="0"
 ></iframe>
 
